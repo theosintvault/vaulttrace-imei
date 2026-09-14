@@ -1,6 +1,8 @@
 README.md
 setup.py
 vaulttrace_imei/__init__.py
+vaulttrace_imei/__main__.py
+vaulttrace_imei/basic_tac_profile.py
 vaulttrace_imei/carrier_ranges.py
 vaulttrace_imei/cli.py
 vaulttrace_imei/tac_lookup.py
