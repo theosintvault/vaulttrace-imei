@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: vaulttrace-imei
+Version: 0.1.0
+Summary: VaultTrace IMEI TAC decoder and carrier inference
+Author: Nicole / The OSINT Vault
+Requires-Python: >=3.8
+Dynamic: author
+Dynamic: requires-python
+Dynamic: summary

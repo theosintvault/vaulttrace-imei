@@ -1,0 +1,2 @@
+[console_scripts]
+vaulttrace-imei = vaulttrace_imei.cli:main

@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+
+# Do NOT ignore tac_db.json — we want the empty file in repo
+# vaulttrace_imei/tac_db.json
