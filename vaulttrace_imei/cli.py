@@ -5,9 +5,7 @@ from typing import Dict, Any, List
 from .carrier_ranges import infer_carrier
 from .tac_db import TAC_DB
 
-# ---------------------------
-# IMEI Validation
-# ---------------------------
+
 def luhn_checksum(imei: str) -> int:
     digits = [int(d) for d in imei]
     for i in range(len(digits) - 2, -1, -2):
@@ -20,16 +18,7 @@ def validate_imei(imei: str) -> bool:
     return len(imei) == 15 and imei.isdigit() and luhn_checksum(imei) == 0
 
 
-# ---------------------------
-# TAC Profiling (Local DB + Fallback)
-# ---------------------------
 def basic_tac_profile(tac: str) -> Dict[str, Any]:
-    """
-    TAC profiler backed by a local TAC_DB.
-    No network calls, no disk I/O.
-    Always returns a complete dict.
-    """
-
     if tac in TAC_DB:
         entry = TAC_DB[tac]
         return {
@@ -43,7 +32,6 @@ def basic_tac_profile(tac: str) -> Dict[str, Any]:
             "release_year": entry.get("release_year", "Unknown"),
         }
 
-    # Fallback for unknown TACs
     notes = ["No TAC match found in local database."]
     if tac.startswith("35"):
         notes.append("TAC starts with '35' (common smartphone allocation).")
@@ -62,34 +50,27 @@ def basic_tac_profile(tac: str) -> Dict[str, Any]:
     }
 
 
-# ---------------------------
-# Anomaly Detection
-# ---------------------------
 def detect_anomalies(imei: str, profile: Dict[str, Any]) -> List[Dict[str, str]]:
     anomalies: List[Dict[str, str]] = []
 
-    # Repeated digit IMEI (e.g., 111111111111111)
     if imei == imei[0] * 15:
         anomalies.append({
             "msg": "IMEI is composed of a single repeated digit.",
             "severity": "high",
         })
 
-    # TAC starting with 00 often indicates test/unallocated ranges
     if profile["tac"].startswith("00"):
         anomalies.append({
             "msg": "TAC starts with '00' (test or unallocated range).",
             "severity": "high",
         })
 
-    # Low confidence TAC match
     if profile.get("confidence", 0.0) < 0.5:
         anomalies.append({
             "msg": "Low confidence TAC match.",
             "severity": "medium",
         })
 
-    # Carrier vs region mismatch (best-effort heuristic)
     carrier = profile.get("likely_original_carrier")
     region = profile.get("region")
     if carrier and region and carrier != "Unknown" and region != "Unknown":
@@ -102,9 +83,6 @@ def detect_anomalies(imei: str, profile: Dict[str, Any]) -> List[Dict[str, str]]
     return anomalies
 
 
-# ---------------------------
-# IMEI Decoder
-# ---------------------------
 def decode_imei(imei: str) -> Dict[str, Any]:
     if not validate_imei(imei):
         return {
@@ -134,9 +112,6 @@ def decode_imei(imei: str) -> Dict[str, Any]:
     return result
 
 
-# ---------------------------
-# CLI Entry Point
-# ---------------------------
 def main():
     parser = argparse.ArgumentParser(
         description="VaultTrace IMEI/TAC Decoder (Local TAC DB)"
@@ -153,6 +128,60 @@ def main():
     )
     args = parser.parse_args()
 
-    results:
+    results: List[Dict[str, Any]] = []
 
+    for identifier in args.identifiers:
+        if len(identifier) == 15 and identifier.isdigit():
+            res = decode_imei(identifier)
+        elif len(identifier) == 8 and identifier.isdigit():
+            tac = identifier
+            pseudo_imei = tac + "0" * 7
+            res = decode_imei(pseudo_imei)
+            res["imei"] = pseudo_imei
+            res["tac"] = tac
+        else:
+            res = {
+                "imei": identifier,
+                "valid": False,
+                "error": "Identifier is neither a 15-digit IMEI nor an 8-digit TAC.",
+            }
+        results.append(res)
+
+    if args.json:
+        print(json.dumps(results, indent=2))
+    else:
+        for res in results:
+            print(f"IMEI: {res.get('imei')}")
+            print(f"  Valid: {res.get('valid')}")
+            if not res.get("valid"):
+                print(f"  Error: {res.get('error')}")
+                print()
+                continue
+
+            print(f"  TAC: {res.get('tac')}")
+            print(f"  Manufacturer: {res.get('manufacturer')}")
+            print(f"  Model: {res.get('model')}")
+            print(f"  Region: {res.get('region')}")
+            print(f"  Confidence: {res.get('confidence')}")
+            print(f"  Likely Original Carrier: {res.get('likely_original_carrier')}")
+            print(f"  Device Type: {res.get('device_type')}")
+            print(f"  Release Year: {res.get('release_year')}")
+
+            notes = res.get("notes", [])
+            if notes:
+                print("  Notes:")
+                for n in notes:
+                    print(f"    - {n}")
+
+            anomalies = res.get("anomalies", [])
+            if anomalies:
+                print("  Anomalies:")
+                for a in anomalies:
+                    print(f"    - [{a.get('severity')}] {a.get('msg')}")
+
+            print()
+
+
+if __name__ == "__main__":
+    main()
 
