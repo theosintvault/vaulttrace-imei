@@ -1,1 +1,14 @@
-{}
+{
+  "35693803": {
+    "tac": "35693803",
+    "manufacturer": "Unknown",
+    "model": "Unknown",
+    "region": "Unknown",
+    "device_type": "Unknown",
+    "release_year": "Unknown",
+    "confidence": 0.0,
+    "notes": [
+      "TAC not found in local database"
+    ]
+  }
+}
