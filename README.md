@@ -1,56 +1,25 @@
-\# VaultTrace IMEI
+# VaultTrace IMEI
 
+VaultTrace IMEI is a precision utility for extracting and correlating TAC data from IMEI identifiers.  
+It is intended for analysts conducting telecom OSINT, device attribution, and fraud investigations.  
+The tool operates locally and supports offline use with a cached TAC dataset.
 
+---
 
-VaultTrace IMEI is a lightweight, public‑safe IMEI/TAC decoder and lookup tool.  
+## Capabilities
+- IMEI parsing and checksum validation
+- TAC extraction and dataset correlation
+- Manufacturer, model, type, and release year identification
+- Optional carrier inference when available
+- Structured JSON output for automated ingestion
+- Offline mode with local TAC database
 
-It uses public datasets to identify device manufacturer, model, type, and region,  
+---
 
-and can perform basic carrier inference when data is available.
-
-
-
-No private TAC/device data is shipped with this tool — all lookups are done against public sources,  
-
-with results cached locally for offline use.
-
-
-
-\---
-
-
-
-\## Features
-
-\- \*\*IMEI \& TAC decoding\*\* — Extracts TAC from IMEI and validates format
-
-\- \*\*Public dataset lookups\*\* — Uses the GitHub TAC database as a primary source
-
-\- \*\*Local caching\*\* — Stores results for instant offline lookups
-
-\- \*\*Optional full database preload\*\* — Download the entire TAC DB for offline mode
-
-\- \*\*JSON output\*\* — Easy integration with other tools and scripts
-
-\- \*\*Cross‑platform\*\* — Works on Windows, macOS, and Linux
-
-
-
-\---
-
-
-
-\## Installation
-
-
-
-\### 1. Clone the repository
-
+## Deployment
 ```bash
-
 git clone https://github.com/theosintvault/vaulttrace-imei.git
-
 cd vaulttrace-imei
-
-
-
+python3 -m venv venv
+source venv/bin/activate
+pip install .
