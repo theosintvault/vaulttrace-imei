@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 basic_tac_profile.py
-Multi-source TAC lookup: GitHub TAC DB -> tacapi.com -> imeiapi.com
+Multi-source TAC lookup with flexible key mapping for different datasets.
 """
 
 import re
@@ -13,7 +13,6 @@ import urllib.request
 # Data sources
 GITHUB_TAC_URL = "https://raw.githubusercontent.com/MoazEb/tac-database/main/tac/"
 TACAPI_URL = "https://tacapi.com/api/v1/tac/"
-IMEIAPI_URL = "https://api.imeiapi.com/api/v1/tac/"  # Public endpoint for TAC lookup
 
 # Local cache file
 CACHE_FILE = os.path.join(os.path.dirname(__file__), "tac_db.json")
@@ -47,37 +46,25 @@ def fetch_json(url):
     return None
 
 
+def normalize_tac_data(data):
+    """Map various possible TAC dataset keys to standard output keys."""
+    if not isinstance(data, dict):
+        return None
+    return {
+        "brand": data.get("brand") or data.get("brand_name") or data.get("manufacturer") or "",
+        "model": data.get("model") or data.get("model_name") or data.get("device") or data.get("marketing_name") or "",
+        "type": data.get("type") or data.get("equipment_type") or ""
+    }
+
+
 def fetch_from_github(tac):
     data = fetch_json(f"{GITHUB_TAC_URL}{tac}.json")
-    if data and isinstance(data, dict) and data.get("brand"):
-        return {
-            "brand": data.get("brand", "").strip(),
-            "model": data.get("model", "").strip(),
-            "type": data.get("type", "").strip()
-        }
-    return None
+    return normalize_tac_data(data)
 
 
 def fetch_from_tacapi(tac):
     data = fetch_json(f"{TACAPI_URL}{tac}")
-    if data and isinstance(data, dict) and data.get("brand"):
-        return {
-            "brand": str(data.get("brand", "")).strip(),
-            "model": str(data.get("model", "")).strip(),
-            "type": str(data.get("type", "")).strip()
-        }
-    return None
-
-
-def fetch_from_imeiapi(tac):
-    data = fetch_json(f"{IMEIAPI_URL}{tac}")
-    if data and isinstance(data, dict) and data.get("brand"):
-        return {
-            "brand": str(data.get("brand", "")).strip(),
-            "model": str(data.get("model", "")).strip(),
-            "type": str(data.get("type", "")).strip()
-        }
-    return None
+    return normalize_tac_data(data)
 
 
 def basic_tac_profile(imei):
@@ -91,17 +78,28 @@ def basic_tac_profile(imei):
         return {"TAC": tac, **cache[tac]}
 
     # Try sources in order
-    for fetcher in (fetch_from_github, fetch_from_tacapi, fetch_from_imeiapi):
+    for fetcher in (fetch_from_github, fetch_from_tacapi):
         data = fetcher(tac)
-        if data:
+        if data and (data["brand"] or data["model"] or data["type"]):
             cache[tac] = data
             save_cache(cache)
             return {"TAC": tac, **data}
 
     # No data found
-    cache[tac] = {"brand": "", "model": "", "type": ""}
+    unknown_data = {
+        "brand": "",
+        "brand_name": "",
+        "manufacturer": "",
+        "model": "",
+        "model_name": "",
+        "device": "",
+        "marketing_name": "",
+        "equipment_type": "",
+        "type": ""
+    }
+    cache[tac] = unknown_data
     save_cache(cache)
-    return {"TAC": tac, "brand": "", "model": "", "type": ""}
+    return {"TAC": tac, **unknown_data}
 
 
 if __name__ == "__main__":
@@ -112,7 +110,10 @@ if __name__ == "__main__":
     imei_input = sys.argv[1]
     result = basic_tac_profile(imei_input)
 
-    for key, value in result.items():
-        print(f"{key}: {value}")
+    print(f"TAC: {result['TAC']}")
+    print(f"Brand: {result.get('brand') or result.get('brand_name') or result.get('manufacturer')}")
+    print(f"Model: {result.get('model') or result.get('model_name') or result.get('device') or result.get('marketing_name')}")
+    print(f"Type: {result.get('type') or result.get('equipment_type')}")
+
 
 
