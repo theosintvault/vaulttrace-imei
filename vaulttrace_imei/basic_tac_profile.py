@@ -1,11 +1,14 @@
 import json
 import os
 import re
+import sys
 import requests
 from bs4 import BeautifulSoup
 
-# Local TAC DB path
+# Local TAC DB path (stored in same folder as this script)
 LOCAL_DB_PATH = os.path.join(os.path.dirname(__file__), "tac_db.json")
+
+# ---------------- Database Helpers ---------------- #
 
 def load_tac_db():
     """Load TAC database from local file."""
@@ -26,7 +29,10 @@ def save_tac_db(db):
     except OSError as e:
         print(f"Error saving TAC database: {e}")
 
+# Load DB into memory
 TAC_DB = load_tac_db()
+
+# ---------------- Fetch from GitHub ---------------- #
 
 def fetch_tac_from_github(tac: str) -> dict:
     """Fetch TAC details from public GitHub TAC database."""
@@ -38,6 +44,8 @@ def fetch_tac_from_github(tac: str) -> dict:
     except requests.RequestException as e:
         print(f"GitHub TAC fetch error: {e}")
     return {}
+
+# ---------------- Fetch from GSMA ---------------- #
 
 def fetch_tac_from_gsma(tac: str) -> dict:
     """
@@ -60,70 +68,55 @@ def fetch_tac_from_gsma(tac: str) -> dict:
                     data[key.lower().replace(" ", "_")] = value
         return data
     except requests.RequestException as e:
-        print(f"GSMA scrape error: {e}")
+        print(f"GSMA TAC fetch error: {e}")
     return {}
 
-def basic_tac_profile(identifier: str) -> dict:
-    """
-    Returns TAC profile from either a TAC code or a full IMEI.
-    Falls back to multiple public sources if not found locally.
-    """
-    # Determine if input is IMEI or TAC
-    if re.fullmatch(r"\d{15}", identifier):
-        tac = identifier[:8]
-    elif re.fullmatch(r"\d{8}", identifier):
-        tac = identifier
-    else:
-        raise ValueError("Invalid input. Must be 8-digit TAC or 15-digit IMEI.")
+# ---------------- Main Lookup Logic ---------------- #
 
-    # Start with local DB
-    profile = TAC_DB.get(tac, {
-        "tac": tac,
-        "manufacturer": "Unknown",
-        "model": "Unknown",
-        "region": "Unknown",
-        "device_type": "Unknown",
-        "release_year": "Unknown",
-        "confidence": 0.0,
-        "notes": ["TAC not found in local database"]
-    })
+def lookup_tac(imei: str) -> dict:
+    """Main lookup logic: local DB → GitHub → GSMA."""
+    if not re.fullmatch(r"\d{15}", imei):
+        return {"error": "Invalid IMEI format. Must be 15 digits."}
 
-    # Try GitHub TAC DB
-    if profile["manufacturer"] == "Unknown":
-        gh_data = fetch_tac_from_github(tac)
-        if gh_data:
-            profile.update({
-                "manufacturer": gh_data.get("manufacturer", profile["manufacturer"]),
-                "model": gh_data.get("model", profile["model"]),
-                "region": gh_data.get("region", profile["region"]),
-                "device_type": gh_data.get("device_type", profile["device_type"]),
-                "release_year": gh_data.get("release_year", profile["release_year"]),
-                "confidence": max(profile["confidence"], 0.9),
-                "notes": profile["notes"] + ["Fetched from GitHub TAC database"]
-            })
+    tac = imei[:8]
 
-    # Try GSMA mirror scrape
-    if profile["manufacturer"] == "Unknown" or profile["model"] == "Unknown":
-        gsma_data = fetch_tac_from_gsma(tac)
-        if gsma_data:
-            profile.update({
-                "manufacturer": gsma_data.get("manufacturer", profile["manufacturer"]),
-                "model": gsma_data.get("model", profile["model"]),
-                "region": gsma_data.get("country", profile["region"]),
-                "device_type": gsma_data.get("device_type", profile["device_type"]),
-                "release_year": gsma_data.get("release_year", profile["release_year"]),
-                "confidence": max(profile["confidence"], 0.85),
-                "notes": profile["notes"] + ["Fetched from GSMA TAC mirror"]
-            })
+    # 1. Check local DB
+    if tac in TAC_DB:
+        return {"TAC": tac, **TAC_DB[tac]}
 
-    # Cache updated profile locally
-    TAC_DB[tac] = profile
-    save_tac_db(TAC_DB)
+    # 2. Try GitHub
+    gh_data = fetch_tac_from_github(tac)
+    if gh_data:
+        TAC_DB[tac] = gh_data
+        save_tac_db(TAC_DB)
+        return {"TAC": tac, **gh_data}
 
-    return profile
+    # 3. Try GSMA scraping
+    gsma_data = fetch_tac_from_gsma(tac)
+    if gsma_data:
+        TAC_DB[tac] = gsma_data
+        save_tac_db(TAC_DB)
+        return {"TAC": tac, **gsma_data}
 
-# Example usage
+    # 4. Not found anywhere
+    return {"TAC": tac, "brand": "Unknown", "model": "Unknown", "type": "Unknown"}
+
+# ---------------- CLI Entry Point ---------------- #
+
 if __name__ == "__main__":
-    print(json.dumps(basic_tac_profile("35693803"), indent=2))
+    if len(sys.argv) != 2:
+        print("Usage: python -m vaulttrace_imei.basic_tac_profile <IMEI>")
+        sys.exit(1)
+
+    imei_input = sys.argv[1]
+    result = lookup_tac(imei_input)
+
+    if "error" in result:
+        print(f"Error: {result['error']}")
+    else:
+        print(f"TAC: {result['TAC']}")
+        print(f"Brand: {result.get('brand', 'Unknown')}")
+        print(f"Model: {result.get('model', 'Unknown')}")
+        print(f"Type: {result.get('type', 'Unknown')}")
 
 
