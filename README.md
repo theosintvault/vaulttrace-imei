@@ -1,25 +1,26 @@
-# VaultTrace IMEI
+VaultTrace IMEI
+VaultTrace IMEI is a focused utility for analyzing IMEI identifiers and correlating TAC values with device intelligence. The tool is built for OSINT practitioners, forensic analysts, telecom researchers, and fraud investigators who need reliable IMEI interpretation without external dependencies. All processing is local and transparent.
 
-VaultTrace IMEI is a precision utility for extracting and correlating TAC data from IMEI identifiers.  
-It is intended for analysts conducting telecom OSINT, device attribution, and fraud investigations.  
-The tool operates locally and supports offline use with a cached TAC dataset.
+Overview
+An IMEI contains a TAC block that identifies the device family. VaultTrace IMEI extracts the TAC, validates the IMEI structure, and maps the TAC to manufacturer, model, region, device type, and release year using a local dataset. The tool also performs anomaly checks to highlight irregular or suspicious identifiers.
 
----
+The project is designed for environments where offline operation, reproducibility, and data integrity matter.
 
-## Capabilities
-- IMEI parsing and checksum validation
-- TAC extraction and dataset correlation
-- Manufacturer, model, type, and release year identification
-- Optional carrier inference when available
-- Structured JSON output for automated ingestion
-- Offline mode with local TAC database
+Features
+Full IMEI parsing and Luhn checksum validation
 
----
+TAC extraction and correlation with a local dataset
 
-## Deployment
-```bash
-git clone https://github.com/theosintvault/vaulttrace-imei.git
-cd vaulttrace-imei
-python3 -m venv venv
-source venv/bin/activate
-pip install .
+Manufacturer, model, region, device type, and release year identification
+
+Confidence scoring for TAC matches
+
+Optional carrier inference when available
+
+Structured JSON output for automation and ingestion
+
+Local-only operation with no network calls
+
+Basic anomaly detection with severity levels
+
+CLI interface for single or multiple identifiers
