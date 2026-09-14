@@ -1,3 +1,11 @@
+<p align="center">
+  <img src="https://img.shields.io/badge/status-active-success.svg" />
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
+  <img src="https://img.shields.io/badge/python-3.10+-yellow.svg" />
+  <img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey.svg" />
+  <img src="https://img.shields.io/badge/imei-analysis-critical.svg" />
+</p>
+
 # VaultTrace IMEI
 
 VaultTrace IMEI is a focused utility for analyzing IMEI identifiers and correlating TAC values with device intelligence. The tool is built for OSINT practitioners, forensic analysts, telecom researchers, and fraud investigators who need reliable IMEI interpretation without external dependencies. All processing is local and transparent.
