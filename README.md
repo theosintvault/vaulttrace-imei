@@ -1,38 +1,27 @@
-<p align="center">
-  <img src="https://via.placeholder.com/800x200.png?text=VaultTrace+IMEI" alt="VaultTrace IMEI Banner">
-</p>
+# VaultTrace IMEI
 
-<h1 align="center">VaultTrace IMEI</h1>
-<p align="center">
-  <em>Lightweight, public‑safe IMEI/TAC decoder and lookup tool for OSINT, research, and telecom analysis.</em>
-</p>
+> Device Intelligence. Simplified.
 
-<p align="center">
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8%2B-blue"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg"></a>
-  <a href="https://github.com/theosintvault/vaulttrace-imei/commits/main"><img src="https://img.shields.io/github/last-commit/theosintvault/vaulttrace-imei"></a>
-  <a href="https://github.com/theosintvault/vaulttrace-imei"><img src="https://img.shields.io/github/repo-size/theosintvault/vaulttrace-imei"></a>
-</p>
+VaultTrace IMEI is a precision tool for decoding and profiling IMEI/TAC identifiers.  
+Designed for OSINT practitioners, telecom analysts, and security researchers, it leverages public TAC datasets to identify device manufacturer, model, type, and region — with optional carrier inference when available.
+
+No proprietary or private TAC data is included. All lookups are performed against public sources, with results cached locally for offline use.
 
 ---
 
-## 📚 Table of Contents
-- [🚀 Quick Start](#-quick-start)
-- [✨ Features](#-features)
-- [📦 Installation](#-installation)
-- [🛠 Usage](#-usage)
-- [📊 Example Output](#-example-output)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-- [⚠️ Disclaimer](#-disclaimer)
+## Capabilities
+- **IMEI/TAC Decoding** — Extracts TAC from IMEI and validates format integrity
+- **Public Dataset Correlation** — Matches TAC against open-source TAC databases
+- **Offline Intelligence Mode** — Local caching for air‑gapped environments
+- **Full Database Preload** — Optional complete TAC DB for rapid lookups
+- **Structured Output** — JSON format for integration into intelligence pipelines
+- **Cross‑Platform** — Windows, macOS, Linux
 
 ---
 
-## 🚀 Quick Start
-Run a TAC lookup in **3 commands**:
+## Deployment
 
+Clone the repository:
 ```bash
 git clone https://github.com/theosintvault/vaulttrace-imei.git
 cd vaulttrace-imei
-python -m vaulttrace_imei 356938035643809 --json
-
