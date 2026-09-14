@@ -1,7 +1,9 @@
 import json
 import argparse
 from typing import Dict, Any, List
+
 from .carrier_ranges import infer_carrier
+from .tac_db import TAC_DB
 
 # ---------------------------
 # IMEI Validation
@@ -13,29 +15,38 @@ def luhn_checksum(imei: str) -> int:
         digits[i] = doubled - 9 if doubled > 9 else doubled
     return sum(digits) % 10
 
+
 def validate_imei(imei: str) -> bool:
     return len(imei) == 15 and imei.isdigit() and luhn_checksum(imei) == 0
 
+
 # ---------------------------
-# PURE LOCAL TAC PROFILER (NO JSON, NO FILES, NO LOOKUPS)
+# TAC Profiling (Local DB + Fallback)
 # ---------------------------
 def basic_tac_profile(tac: str) -> Dict[str, Any]:
     """
-    Fully local TAC profiler.
-    No JSON.
-    No disk writes.
-    No disk reads.
-    No online lookups.
-    No cache.
-    No None returns.
+    TAC profiler backed by a local TAC_DB.
+    No network calls, no disk I/O.
     Always returns a complete dict.
     """
 
-    notes = []
+    if tac in TAC_DB:
+        entry = TAC_DB[tac]
+        return {
+            "tac": tac,
+            "manufacturer": entry.get("manufacturer", "Unknown"),
+            "model": entry.get("model", "Unknown"),
+            "region": entry.get("region", "Unknown"),
+            "confidence": entry.get("confidence", 0.0),
+            "notes": entry.get("notes", []),
+            "device_type": entry.get("device_type", "Unknown"),
+            "release_year": entry.get("release_year", "Unknown"),
+        }
 
+    # Fallback for unknown TACs
+    notes = ["No TAC match found in local database."]
     if tac.startswith("35"):
         notes.append("TAC starts with '35' (common smartphone allocation).")
-
     if tac.startswith("01"):
         notes.append("TAC starts with '01' (older allocation pattern).")
 
@@ -50,27 +61,46 @@ def basic_tac_profile(tac: str) -> Dict[str, Any]:
         "release_year": "Unknown",
     }
 
+
 # ---------------------------
 # Anomaly Detection
 # ---------------------------
-def detect_anomalies(imei: str, profile: Dict[str, Any]) -> List[str]:
-    anomalies = []
+def detect_anomalies(imei: str, profile: Dict[str, Any]) -> List[Dict[str, str]]:
+    anomalies: List[Dict[str, str]] = []
 
+    # Repeated digit IMEI (e.g., 111111111111111)
     if imei == imei[0] * 15:
-        anomalies.append("IMEI is composed of a single repeated digit.")
+        anomalies.append({
+            "msg": "IMEI is composed of a single repeated digit.",
+            "severity": "high",
+        })
 
+    # TAC starting with 00 often indicates test/unallocated ranges
     if profile["tac"].startswith("00"):
-        anomalies.append("TAC starts with '00' (unallocated or test range).")
+        anomalies.append({
+            "msg": "TAC starts with '00' (test or unallocated range).",
+            "severity": "high",
+        })
 
-    if profile.get("confidence", 0) < 0.5:
-        anomalies.append("Low confidence TAC match.")
+    # Low confidence TAC match
+    if profile.get("confidence", 0.0) < 0.5:
+        anomalies.append({
+            "msg": "Low confidence TAC match.",
+            "severity": "medium",
+        })
 
+    # Carrier vs region mismatch (best-effort heuristic)
     carrier = profile.get("likely_original_carrier")
     region = profile.get("region")
-    if carrier and region and carrier.lower() not in region.lower():
-        anomalies.append(f"Carrier '{carrier}' does not match region '{region}'.")
+    if carrier and region and carrier != "Unknown" and region != "Unknown":
+        if carrier.lower() not in region.lower():
+            anomalies.append({
+                "msg": f"Carrier '{carrier}' does not appear to match region '{region}'.",
+                "severity": "low",
+            })
 
     return anomalies
+
 
 # ---------------------------
 # IMEI Decoder
@@ -103,22 +133,26 @@ def decode_imei(imei: str) -> Dict[str, Any]:
     result["anomalies"] = detect_anomalies(imei, result)
     return result
 
+
 # ---------------------------
 # CLI Entry Point
 # ---------------------------
 def main():
-    parser = argparse.ArgumentParser(description="IMEI/TAC Decoder (Pure Local Mode)")
-    parser.add_argument("identifiers", nargs="+", help="IMEI(s) or TAC(s) to decode")
-    parser.add_argument("--json", action="store_true", help="Output in JSON format")
+    parser = argparse.ArgumentParser(
+        description="VaultTrace IMEI/TAC Decoder (Local TAC DB)"
+    )
+    parser.add_argument(
+        "identifiers",
+        nargs="+",
+        help="IMEI(s) to decode (15-digit) or TAC(s) (8-digit, best-effort).",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output in JSON format.",
+    )
     args = parser.parse_args()
 
-    results = [decode_imei(identifier) for identifier in args.identifiers]
-
-    if args.json:
-        print(json.dumps(results, indent=2))
-    else:
-        for res in results:
-            print(f"IMEI: {res['imei']}")
-            print(f"  Valid: {res['valid']}")
+    results:
 
 
