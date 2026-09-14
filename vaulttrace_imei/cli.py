@@ -119,5 +119,6 @@ def main():
     else:
         for res in results:
             print(f"IMEI: {res['imei']}")
-            print(f"  Valid
+            print(f"  Valid: {res['valid']}")
+
 
