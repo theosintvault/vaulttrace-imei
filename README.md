@@ -1,27 +1,25 @@
 # VaultTrace IMEI
 
-> Device Intelligence. Simplified.
-
-VaultTrace IMEI is a precision tool for decoding and profiling IMEI/TAC identifiers.  
-Designed for OSINT practitioners, telecom analysts, and security researchers, it leverages public TAC datasets to identify device manufacturer, model, type, and region — with optional carrier inference when available.
-
-No proprietary or private TAC data is included. All lookups are performed against public sources, with results cached locally for offline use.
+VaultTrace IMEI is a precision utility for extracting and correlating TAC data from IMEI identifiers.  
+It is intended for analysts conducting telecom OSINT, device attribution, and fraud investigations.  
+The tool operates locally and supports offline use with a cached TAC dataset.
 
 ---
 
 ## Capabilities
-- **IMEI/TAC Decoding** — Extracts TAC from IMEI and validates format integrity
-- **Public Dataset Correlation** — Matches TAC against open-source TAC databases
-- **Offline Intelligence Mode** — Local caching for air‑gapped environments
-- **Full Database Preload** — Optional complete TAC DB for rapid lookups
-- **Structured Output** — JSON format for integration into intelligence pipelines
-- **Cross‑Platform** — Windows, macOS, Linux
+- IMEI parsing and checksum validation
+- TAC extraction and dataset correlation
+- Manufacturer, model, type, and release year identification
+- Optional carrier inference when available
+- Structured JSON output for automated ingestion
+- Offline mode with local TAC database
 
 ---
 
 ## Deployment
-
-Clone the repository:
 ```bash
 git clone https://github.com/theosintvault/vaulttrace-imei.git
 cd vaulttrace-imei
+python3 -m venv venv
+source venv/bin/activate
+pip install .
